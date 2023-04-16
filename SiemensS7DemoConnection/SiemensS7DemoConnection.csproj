@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>plc.ico</ApplicationIcon>
+	<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="S7Device.cs" />
+    <Compile Remove="S7DeviceBase.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="plc.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="S7Device.cs" />
+    <None Include="S7DeviceBase.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="S7netplus" Version="0.16.0" />
+  </ItemGroup>
+
+</Project>

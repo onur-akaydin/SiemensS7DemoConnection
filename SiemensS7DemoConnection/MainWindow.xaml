@@ -20,19 +20,19 @@
             <ColumnDefinition Width="220"/>
             <ColumnDefinition Width="100"/>
             <ColumnDefinition Width="70"/>
-            <ColumnDefinition Width="100"/>
+            <ColumnDefinition Width="120"/>
             <ColumnDefinition Width="100"/>
         </Grid.ColumnDefinitions>
 
         <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" 
-                   Text="IP adresi"/>
+                   Text="IP address"/>
         <TextBox Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
                    Text="{Binding IpAddress}"/>
         <Button Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
-                Content="BAĞLAN" x:Name="btnConnect" Click="btnConnect_Click" />
+                Content="CONNECT" x:Name="btnConnect" Click="btnConnect_Click" />
 
         <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" 
-                   Text="CPU Tipi"/>
+                   Text="CPU Type"/>
         <TextBox Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
                    Text="{Binding Cpu}"/>
 
@@ -47,31 +47,31 @@
                    Text="{Binding Slot}"/>
 
         <TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" 
-                   Text="Okunacak DB adresi (örn. DB1.DBD52)"/>
+                   Text="DB address to read (e.g. DB1.DBD52)"/>
         <TextBox Grid.Row="4" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
                    Text="{Binding ReadAddress}"/>
         <Button Grid.Row="4" Grid.Column="2" VerticalAlignment="Center"
-                Content="OKU" x:Name="btnRead" Click="btnRead_Click" />
+                Content="READ" x:Name="btnRead" Click="btnRead_Click" />
         <TextBlock Grid.Row="4" Grid.Column="3" VerticalAlignment="Center" Margin="5 0"
-                   Text="Okunan değer:"/>
+                   Text="Value read:"/>
         <TextBox Grid.Row="4" Grid.Column="4" VerticalAlignment="Center" Margin="5 0"
                    Text="{Binding ReadValue}"/>
 
 
         <TextBlock Grid.Row="5" Grid.Column="0" VerticalAlignment="Center"
-                   Text="Yazılacak DB adresi (örn. DB15.DBX0.0)"/>
+                   Text="DB address to write (e.g. DB15.DBX0.0)"/>
         <TextBox Grid.Row="5" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
                    Text="{Binding WriteAddress}"/>
         <Button Grid.Row="5" Grid.Column="2" VerticalAlignment="Center"
-                Content="YAZ" x:Name="btnWrite" Click="btnWrite_Click" />
+                Content="WRITE" x:Name="btnWrite" Click="btnWrite_Click" />
         <TextBlock Grid.Row="5" Grid.Column="3" VerticalAlignment="Center" Margin="5 0"
-                   Text="Yazılacak değer:"/>
+                   Text="Value to be written:"/>
         <TextBox Grid.Row="5" Grid.Column="4" VerticalAlignment="Center" Margin="5 0"
                    Text="{Binding WriteValue}"/>
 
 
         <TextBlock Grid.Row="6" Grid.Column="0" VerticalAlignment="Top"
-                   Text="İşlem Sonucu:"/>
+                   Text="Process result:"/>
         <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="4" VerticalAlignment="Top" TextWrapping="Wrap"
                    Text="{Binding ProcessResult}" Background="LightGray" Height="200"/>
 

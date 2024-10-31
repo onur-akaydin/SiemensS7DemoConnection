@@ -27,13 +27,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         InitializeComponent();
         this.DataContext = this;
-        IpAddress = "192.168.1.100";
-        Cpu = "S71200";
+        IpAddress = "192.168.1.72";
+        Cpu = "S71500";
         Rack = 0;
         Slot = 1;
 
-        ReadAddress = "DB1.DBD52";
-        WriteAddress = "DB15.DBX0.0";
+        //ReadAddress = "DB1.DBD52";
+        ReadAddress = "DB26.DBX0.0";
+        
+        WriteAddress = "DB26.DBX0.0";
     }
 
     public string IpAddress { get; set; }
@@ -55,11 +57,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             var result = await s7.ReadAsync<object>(ReadAddress);
             ReadValue = result.ToString();
-            ProcessResult = $"OKUMA BAŞARILI - {DateTime.Now}";
+            ProcessResult = $"READ SUCCESSFUL - {DateTime.Now}";
         }
         catch (Exception ex)
         {
-            ProcessResult = $"OKUMA BAŞARISIZ - {DateTime.Now} \r\n{ex}";
+            ProcessResult = $"READ FAILED - {DateTime.Now} \r\n{ex}";
         }
 
         //OnPropertyChanged(nameof(ReadValue));
@@ -72,11 +74,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             var result = await s7.WriteAsyncUnknownType(WriteAddress, WriteValue);
-            ProcessResult = result ? $"YAZMA BAŞARILI - {DateTime.Now}" : $"YAZMA BAŞARISIZ - {DateTime.Now}";
+            ProcessResult = result ? $"WRITE SUCCESSFUL - {DateTime.Now}" : $"WRITE FAILED - {DateTime.Now}";
         }
         catch (Exception ex)
         {
-            ProcessResult = $"YAZMA BAŞARISIZ - {DateTime.Now} \r\n{ex}";
+            ProcessResult = $"WRITE FAILED - {DateTime.Now} \r\n{ex}";
         }
 
         //OnPropertyChanged(nameof(ReadValue));
@@ -92,7 +94,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         s7.WriteTimeout = 2000;
         await s7.ConnectAsync();
 
-        ProcessResult = s7.IsConnected ? $"BAĞLANTI BAŞARILI - {DateTime.Now}" : $"BAĞLANTI BAŞARISIZ - {DateTime.Now}";
+        ProcessResult = s7.IsConnected ? $"CONNECTION SUCCESSFUL - {DateTime.Now}" : $"CONNECTION FAILED - {DateTime.Now}";
         OnPropertyChanged(nameof(ProcessResult));
     }
 
@@ -107,7 +109,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         storage = value;
 
-        // ReSharper disable once ExplicitCallerInfoArgument
         OnPropertyChanged(propertyName);
         return true;
     }

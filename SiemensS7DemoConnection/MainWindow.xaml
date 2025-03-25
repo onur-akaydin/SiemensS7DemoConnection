@@ -5,7 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SiemensS7DemoConnection"
         mc:Ignorable="d"
-        Title="Siemens S7 Demo" Height="500" Width="666">
+        Title="Siemens S7 Demo" Height="570" Width="700">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <local:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+    </Window.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -14,6 +18,8 @@
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -21,7 +27,7 @@
             <ColumnDefinition Width="100"/>
             <ColumnDefinition Width="70"/>
             <ColumnDefinition Width="120"/>
-            <ColumnDefinition Width="100"/>
+            <ColumnDefinition Width="140"/>
         </Grid.ColumnDefinitions>
 
         <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" 
@@ -47,33 +53,59 @@
                    Text="{Binding Slot}"/>
 
         <TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" 
-                   Text="DB address to read (e.g. DB1.DBD52)"/>
-        <TextBox Grid.Row="4" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
-                   Text="{Binding ReadAddress}"/>
-        <Button Grid.Row="4" Grid.Column="2" VerticalAlignment="Center"
-                Content="READ" x:Name="btnRead" Click="btnRead_Click" />
-        <TextBlock Grid.Row="4" Grid.Column="3" VerticalAlignment="Center" Margin="5 0"
-                   Text="Value read:"/>
-        <TextBox Grid.Row="4" Grid.Column="4" VerticalAlignment="Center" Margin="5 0"
-                   Text="{Binding ReadValue}"/>
+                   Text="Data Type"/>
+        <ComboBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="5 0"
+                 ItemsSource="{Binding AvailableDataTypes}" 
+                 SelectedItem="{Binding SelectedDataType}" />
+        <TextBlock Grid.Row="4" Grid.Column="3" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="5 0"
+                 Text="Select the data type before reading/writing" Foreground="Gray" />
 
-
-        <TextBlock Grid.Row="5" Grid.Column="0" VerticalAlignment="Center"
-                   Text="DB address to write (e.g. DB15.DBX0.0)"/>
+        <TextBlock Grid.Row="5" Grid.Column="0" VerticalAlignment="Center" 
+                   Text="Address to read (e.g. DB1.DBW20)"/>
         <TextBox Grid.Row="5" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
-                   Text="{Binding WriteAddress}"/>
+                   Text="{Binding ReadAddress}"/>
         <Button Grid.Row="5" Grid.Column="2" VerticalAlignment="Center"
-                Content="WRITE" x:Name="btnWrite" Click="btnWrite_Click" />
+                Content="READ" x:Name="btnRead" Click="btnRead_Click" />
         <TextBlock Grid.Row="5" Grid.Column="3" VerticalAlignment="Center" Margin="5 0"
-                   Text="Value to be written:"/>
+                   Text="Value read:"/>
         <TextBox Grid.Row="5" Grid.Column="4" VerticalAlignment="Center" Margin="5 0"
-                   Text="{Binding WriteValue}"/>
+                   Text="{Binding ReadValue}" IsReadOnly="True"/>
 
 
-        <TextBlock Grid.Row="6" Grid.Column="0" VerticalAlignment="Top"
+        <TextBlock Grid.Row="6" Grid.Column="0" VerticalAlignment="Center"
+                   Text="Address to write (e.g. DB1.DBW20)"/>
+        <TextBox Grid.Row="6" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
+                   Text="{Binding WriteAddress}"/>
+        <Button Grid.Row="6" Grid.Column="2" VerticalAlignment="Center"
+                Content="WRITE" x:Name="btnWrite" Click="btnWrite_Click" />
+        <TextBlock Grid.Row="6" Grid.Column="3" VerticalAlignment="Center" Margin="5 0"
+                   Text="Value to write:"/>
+        <TextBox Grid.Row="6" Grid.Column="4" VerticalAlignment="Center" Margin="5 0"
+                   Text="{Binding WriteValue}" x:Name="txtWriteValue"
+                   Visibility="{Binding IsDateTimeSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+        <DatePicker Grid.Row="6" Grid.Column="4" VerticalAlignment="Center" Margin="5 0"
+                   SelectedDate="{Binding WriteDateTime}" x:Name="dtpWriteDate"
+                   Visibility="{Binding IsDateTimeSelected, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+
+        <TextBlock Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="5" VerticalAlignment="Top" Margin="0,5" TextWrapping="Wrap">
+            <Run FontWeight="Bold">Address Examples:</Run>
+            <LineBreak/>
+            <Run>DB3.DBX5.2 - Bit at DB3, byte 5, bit 2</Run>
+            <LineBreak/>
+            <Run>DB15.DBD124 - Double word (32-bit) at DB15, byte 124</Run>
+            <LineBreak/>
+            <Run>DB1.DBW38 - Word (16-bit) at DB1, byte 38</Run>
+            <LineBreak/>
+            <Run>DB26.DBB64.String200 - String with max length 200 at DB26, byte 64</Run>
+            <LineBreak/>
+            <Run>DB7.DBB100.DateTime - DateTime value (8 bytes) at DB7, byte 100</Run>
+        </TextBlock>
+
+        <TextBlock Grid.Row="8" Grid.Column="0" VerticalAlignment="Top"
                    Text="Process result:"/>
-        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="4" VerticalAlignment="Top" TextWrapping="Wrap"
-                   Text="{Binding ProcessResult}" Background="LightGray" Height="200"/>
+        <TextBox Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="4" VerticalAlignment="Top" TextWrapping="Wrap"
+                   Text="{Binding ProcessResult}" Background="LightGray" Height="250"/>
 
     </Grid>
 </Window>

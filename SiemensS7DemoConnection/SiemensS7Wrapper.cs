@@ -7,7 +7,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
-using System.Windows.Input;
+// Use alias to avoid ambiguity between System.DateTime and S7.Net.Types.DateTime
+using SDateTime = System.DateTime;
 
 namespace SiemensS7DemoConnection;
 
@@ -119,7 +120,6 @@ public class SiemensS7Wrapper
         plc = new Plc(CpuType, IpAddress, (short)Rack, (short)Slot);
         plc.ReadTimeout = ReadTimeout;
         plc.WriteTimeout = WriteTimeout;
-
     }
 
     #region PRIVATE FIELDS
@@ -192,6 +192,20 @@ public class SiemensS7Wrapper
     {
         try
         {
+            //if (!IsConnected)
+            //    throw new PlcException(ErrorCode.ConnectionError, "PLC is not connected");
+
+            if (variable.Contains("String", StringComparison.OrdinalIgnoreCase))
+            {
+                // Handle S7 String type
+                return await ReadStringAsync<T>(variable);
+            }
+            else if (variable.Contains("DateTime", StringComparison.OrdinalIgnoreCase))
+            {
+                // Handle DateTime type
+                return await ReadDateTimeAsync<T>(variable);
+            }
+
             object result = await plc.ReadAsync(variable);
             if (result is null)
             {
@@ -199,7 +213,6 @@ public class SiemensS7Wrapper
             }
             var convertedResult = (T)Convert.ChangeType(result, typeof(T));
             return convertedResult;
-            //return (T)result;
         }
         catch (Exception e)
         {
@@ -207,9 +220,156 @@ public class SiemensS7Wrapper
             {
                 await FireEventIfNotNull(PlcErrorOccured, pe.ErrorCode);
             }
-            if (ThrowExceptionOnError) throw;
-            return default(T);
+            // Always propagate the exception
+            throw;
         }
+    }
+
+    private async Task<T> ReadStringAsync<T>(string variable)
+    {
+        try
+        {
+            var address = ParseAddress(variable);
+            // Set max length to 200 as requested
+            int maxLength = 200;
+
+            // Extract string length using regex for more reliable parsing
+            if (variable.Contains("String", StringComparison.OrdinalIgnoreCase))
+            {
+                int startIndex = variable.IndexOf("String", StringComparison.OrdinalIgnoreCase) + 6;
+                string remainingPart = variable.Substring(startIndex);
+
+                // Extract digits that might follow "String"
+                string digits = "";
+                foreach (char c in remainingPart)
+                {
+                    if (char.IsDigit(c))
+                        digits += c;
+                    else
+                        break;
+                }
+
+                if (!string.IsNullOrEmpty(digits) && int.TryParse(digits, out int parsedLength))
+                {
+                    maxLength = parsedLength;
+                }
+            }
+
+            var dataItem = new DataItem
+            {
+                DataType = DataType.DataBlock,
+                DB = address.DbNumber,
+                StartByteAdr = address.StartByte,
+                VarType = VarType.S7String,
+                Count = maxLength,
+                Value = new object()
+            };
+
+            var items = new List<DataItem> { dataItem };
+            // Use the returned list from ReadMultipleVarsAsync
+            var updatedItems = await plc.ReadMultipleVarsAsync(items);
+
+            if (typeof(T) == typeof(string) || typeof(T) == typeof(object))
+            {
+                return (T)updatedItems[0].Value;
+            }
+            else
+            {
+                throw new InvalidOperationException("Cannot convert S7 string to requested type");
+            }
+        }
+        catch (Exception e)
+        {
+            if (e is PlcException pe)
+            {
+                await FireEventIfNotNull(PlcErrorOccured, pe.ErrorCode);
+            }
+            // Always throw the exception to properly notify the caller
+            throw;
+        }
+    }
+
+    private async Task<T> ReadDateTimeAsync<T>(string variable)
+    {
+        try
+        {
+            var address = ParseAddress(variable);
+
+            var dataItem = new DataItem
+            {
+                DataType = DataType.DataBlock,
+                DB = address.DbNumber,
+                StartByteAdr = address.StartByte,
+                VarType = VarType.DateTime,
+                Count = 1,
+                Value = new object()
+            };
+
+            var items = new List<DataItem> { dataItem };
+            // Use the returned list from ReadMultipleVarsAsync
+            var updatedItems = await plc.ReadMultipleVarsAsync(items);
+
+            if (typeof(T) == typeof(SDateTime) || typeof(T) == typeof(object))
+            {
+                return (T)updatedItems[0].Value;
+            }
+            else
+            {
+                return (T)Convert.ChangeType(updatedItems[0].Value, typeof(T));
+            }
+        }
+        catch (Exception e)
+        {
+            if (e is PlcException pe)
+            {
+                await FireEventIfNotNull(PlcErrorOccured, pe.ErrorCode);
+            }
+            // Always throw the exception
+            throw;
+        }
+    }
+
+    private class AddressInfo
+    {
+        public int DbNumber { get; set; }
+        public int StartByte { get; set; }
+    }
+
+    private AddressInfo ParseAddress(string variable)
+    {
+        var info = new AddressInfo();
+
+        // Parse DB number
+        if (variable.StartsWith("DB", StringComparison.OrdinalIgnoreCase))
+        {
+            int dbEndPos = variable.IndexOf('.');
+            if (dbEndPos > 0)
+            {
+                string dbNumStr = variable.Substring(2, dbEndPos - 2);
+                if (int.TryParse(dbNumStr, out int dbNum))
+                {
+                    info.DbNumber = dbNum;
+                }
+            }
+        }
+
+        // Parse byte address if specified (e.g., DB1.DBB100.String or DB1.DBB100)
+        string afterDb = variable.Contains('.') ? variable.Substring(variable.IndexOf('.') + 1) : string.Empty;
+        if (afterDb.StartsWith("DBB", StringComparison.OrdinalIgnoreCase) ||
+            afterDb.StartsWith("DBW", StringComparison.OrdinalIgnoreCase) ||
+            afterDb.StartsWith("DBD", StringComparison.OrdinalIgnoreCase))
+        {
+            string addrPart = afterDb.Substring(3);
+            int dotPos = addrPart.IndexOf('.');
+            string byteAddrStr = dotPos > 0 ? addrPart.Substring(0, dotPos) : addrPart;
+
+            if (int.TryParse(byteAddrStr, out int byteAddr))
+            {
+                info.StartByte = byteAddr;
+            }
+        }
+
+        return info;
     }
 
     public async Task ReadAllAsync()
@@ -240,7 +400,112 @@ public class SiemensS7Wrapper
     {
         try
         {
+            if (variable.Contains("String", StringComparison.OrdinalIgnoreCase))
+            {
+                return await WriteStringAsync(variable, value?.ToString() ?? string.Empty);
+            }
+            else if (variable.Contains("DateTime", StringComparison.OrdinalIgnoreCase) && value is SDateTime)
+            {
+                return await WriteDateTimeAsync(variable, (SDateTime)(object)value);
+            }
+
             await plc.WriteAsync(variable, value);
+            return true;
+        }
+        catch (Exception e)
+        {
+            if (e is PlcException pe)
+            {
+                await FireEventIfNotNull(PlcErrorOccured, pe.ErrorCode);
+            }
+            if (ThrowExceptionOnError) throw;
+            return false;
+        }
+    }
+
+    private async Task<bool> WriteStringAsync(string variable, string value)
+    {
+        try
+        {
+            if (!IsConnected)
+                throw new PlcException(ErrorCode.ConnectionError, "PLC is not connected");
+
+            var address = ParseAddress(variable);
+            // Set max length to 200 as requested
+            int maxLength = 200;
+
+            // Extract string length using better parsing method
+            if (variable.Contains("String", StringComparison.OrdinalIgnoreCase))
+            {
+                int startIndex = variable.IndexOf("String", StringComparison.OrdinalIgnoreCase) + 6;
+                if (startIndex < variable.Length)
+                {
+                    string remainingPart = variable.Substring(startIndex);
+
+                    // Extract digits that might follow "String"
+                    string digits = "";
+                    foreach (char c in remainingPart)
+                    {
+                        if (char.IsDigit(c))
+                            digits += c;
+                        else
+                            break;
+                    }
+
+                    if (!string.IsNullOrEmpty(digits) && int.TryParse(digits, out int parsedLength))
+                    {
+                        maxLength = parsedLength;
+                    }
+                }
+            }
+
+            // Truncate the string if it's too long for the specified maxLength
+            if (value.Length > maxLength)
+            {
+                value = value.Substring(0, maxLength);
+            }
+
+            var dataItem = new DataItem
+            {
+                DataType = DataType.DataBlock,
+                DB = address.DbNumber,
+                StartByteAdr = address.StartByte,
+                VarType = VarType.S7String,
+                Count = maxLength,
+                Value = value
+            };
+
+            await plc.WriteAsync(new[] { dataItem });
+            return true;
+        }
+        catch (Exception e)
+        {
+            if (e is PlcException pe)
+            {
+                await FireEventIfNotNull(PlcErrorOccured, pe.ErrorCode);
+            }
+            // Always throw the exception to properly notify the caller
+            throw;
+        }
+    }
+
+    private async Task<bool> WriteDateTimeAsync(string variable, SDateTime value)
+    {
+        try
+        {
+            var address = ParseAddress(variable);
+
+            var dataItem = new DataItem
+            {
+                DataType = DataType.DataBlock,
+                DB = address.DbNumber,
+                StartByteAdr = address.StartByte,
+                VarType = VarType.DateTime,
+                Count = 1,
+                Value = value
+            };
+
+            await plc.WriteAsync(new[] { dataItem });
             return true;
         }
         catch (Exception e)
@@ -256,6 +521,27 @@ public class SiemensS7Wrapper
 
     public async Task<bool> WriteAsyncUnknownType(string variable, object value)
     {
+        // Handle string variables
+        if (variable.Contains("String", StringComparison.OrdinalIgnoreCase))
+        {
+            return await WriteStringAsync(variable, value?.ToString() ?? string.Empty);
+        }
+
+        // Handle DateTime variables
+        if (variable.Contains("DateTime", StringComparison.OrdinalIgnoreCase))
+        {
+            // Try to convert to DateTime
+            if (value is SDateTime dateTimeValue)
+            {
+                return await WriteDateTimeAsync(variable, dateTimeValue);
+            }
+            else if (value is string dateTimeStr && SDateTime.TryParse(dateTimeStr, out SDateTime parsedDateTime))
+            {
+                return await WriteDateTimeAsync(variable, parsedDateTime);
+            }
+        }
+
+        // Original method for other types
         bool success = false;
         try
         {
@@ -277,7 +563,7 @@ public class SiemensS7Wrapper
             success = true;
         }
         catch { }
-      
+
         try
         {
             await plc.WriteAsync(variable, Convert.ToUInt32(value));
@@ -298,7 +584,7 @@ public class SiemensS7Wrapper
             success = true;
         }
         catch { }
-        
+
         try
         {
             await plc.WriteAsync(variable, Convert.ToSingle(value));

@@ -1,0 +1,79 @@
+﻿<Window x:Class="SiemensS7DemoConnection.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SiemensS7DemoConnection"
+        mc:Ignorable="d"
+        Title="Siemens S7 Demo" Height="500" Width="666">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="100"/>
+            <ColumnDefinition Width="70"/>
+            <ColumnDefinition Width="120"/>
+            <ColumnDefinition Width="100"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" 
+                   Text="IP address"/>
+        <TextBox Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
+                   Text="{Binding IpAddress}"/>
+        <Button Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
+                Content="CONNECT" x:Name="btnConnect" Click="btnConnect_Click" />
+
+        <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" 
+                   Text="CPU Type"/>
+        <TextBox Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
+                   Text="{Binding Cpu}"/>
+
+        <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" 
+                   Text="Rack"/>
+        <TextBox Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
+                   Text="{Binding Rack}"/>
+
+        <TextBlock Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" 
+                   Text="Slot"/>
+        <TextBox Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
+                   Text="{Binding Slot}"/>
+
+        <TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" 
+                   Text="DB address to read (e.g. DB1.DBD52)"/>
+        <TextBox Grid.Row="4" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
+                   Text="{Binding ReadAddress}"/>
+        <Button Grid.Row="4" Grid.Column="2" VerticalAlignment="Center"
+                Content="READ" x:Name="btnRead" Click="btnRead_Click" />
+        <TextBlock Grid.Row="4" Grid.Column="3" VerticalAlignment="Center" Margin="5 0"
+                   Text="Value read:"/>
+        <TextBox Grid.Row="4" Grid.Column="4" VerticalAlignment="Center" Margin="5 0"
+                   Text="{Binding ReadValue}"/>
+
+
+        <TextBlock Grid.Row="5" Grid.Column="0" VerticalAlignment="Center"
+                   Text="DB address to write (e.g. DB15.DBX0.0)"/>
+        <TextBox Grid.Row="5" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
+                   Text="{Binding WriteAddress}"/>
+        <Button Grid.Row="5" Grid.Column="2" VerticalAlignment="Center"
+                Content="WRITE" x:Name="btnWrite" Click="btnWrite_Click" />
+        <TextBlock Grid.Row="5" Grid.Column="3" VerticalAlignment="Center" Margin="5 0"
+                   Text="Value to be written:"/>
+        <TextBox Grid.Row="5" Grid.Column="4" VerticalAlignment="Center" Margin="5 0"
+                   Text="{Binding WriteValue}"/>
+
+
+        <TextBlock Grid.Row="6" Grid.Column="0" VerticalAlignment="Top"
+                   Text="Process result:"/>
+        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="4" VerticalAlignment="Top" TextWrapping="Wrap"
+                   Text="{Binding ProcessResult}" Background="LightGray" Height="200"/>
+
+    </Grid>
+</Window>

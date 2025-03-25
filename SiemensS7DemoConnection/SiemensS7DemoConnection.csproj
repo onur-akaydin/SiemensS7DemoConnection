@@ -12,6 +12,11 @@
   <ItemGroup>
     <Compile Remove="S7Device.cs" />
     <Compile Remove="S7DeviceBase.cs" />
+    <Compile Remove="SiemensS7WrapperExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Remove="MainWindow - Backup.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,12 +24,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="MainWindow - Backup.xaml" />
     <None Include="S7Device.cs" />
     <None Include="S7DeviceBase.cs" />
+    <None Include="SiemensS7WrapperExtensions.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="S7netplus" Version="0.16.0" />
+    <PackageReference Include="S7netplus" Version="0.20.0" />
   </ItemGroup>
 
 </Project>

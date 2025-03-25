@@ -1,120 +1,216 @@
 ﻿using S7.Net;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.Text.RegularExpressions;
 
-namespace SiemensS7DemoConnection;
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
-public partial class MainWindow : Window, INotifyPropertyChanged
+namespace SiemensS7DemoConnection
 {
-    private SiemensS7Wrapper s7;
-    public MainWindow()
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        InitializeComponent();
-        this.DataContext = this;
-        IpAddress = "192.168.1.72";
-        Cpu = "S71500";
-        Rack = 0;
-        Slot = 1;
+        private SiemensS7Wrapper s7;
+        private string _dataType = "Default";
+        private DateTime _writeDateTime = DateTime.Now;
 
-        //ReadAddress = "DB1.DBD52";
-        ReadAddress = "DB26.DBX0.0";
-        
-        WriteAddress = "DB26.DBX0.0";
-    }
-
-    public string IpAddress { get; set; }
-    public string Cpu { get; set; }
-
-    public int Rack { get; set; }
-    public int Slot { get; set; }
-
-    public string ReadValue { get; set; }
-    public string WriteValue { get; set; }
-
-    public string ReadAddress { get; set; }
-    public string WriteAddress { get; set; }
-    public string ProcessResult { get; set; }
-
-    private async void btnRead_Click(object sender, RoutedEventArgs e)
-    {
-        try
+        public MainWindow()
         {
-            var result = await s7.ReadAsync<object>(ReadAddress);
-            ReadValue = result.ToString();
-            ProcessResult = $"READ SUCCESSFUL - {DateTime.Now}";
-        }
-        catch (Exception ex)
-        {
-            ProcessResult = $"READ FAILED - {DateTime.Now} \r\n{ex}";
+            InitializeComponent();
+            this.DataContext = this;
+            IpAddress = "192.168.1.72";
+            Cpu = "S71500";
+            Rack = 0;
+            Slot = 1;
+            ReadAddress = "DB3.DBX5.2";
+            WriteAddress = "DB3.DBX5.2";
+            AvailableDataTypes = new string[] { "Default", "String", "DateTime" };
         }
 
-        //OnPropertyChanged(nameof(ReadValue));
-        //OnPropertyChanged(nameof(ProcessResult));
-        OnPropertyChanged(string.Empty);
-    }
+        public string IpAddress { get; set; }
+        public string Cpu { get; set; }
+        public int Rack { get; set; }
+        public int Slot { get; set; }
+        public string ReadValue { get; set; }
+        public string WriteValue { get; set; }
+        public string ReadAddress { get; set; }
+        public string WriteAddress { get; set; }
+        public string ProcessResult { get; set; }
+        public string[] AvailableDataTypes { get; set; }
 
-    private async void btnWrite_Click(object sender, RoutedEventArgs e)
-    {
-        try
+        public bool IsDateTimeSelected => SelectedDataType == "DateTime";
+
+        public DateTime WriteDateTime
         {
-            var result = await s7.WriteAsyncUnknownType(WriteAddress, WriteValue);
-            ProcessResult = result ? $"WRITE SUCCESSFUL - {DateTime.Now}" : $"WRITE FAILED - {DateTime.Now}";
-        }
-        catch (Exception ex)
-        {
-            ProcessResult = $"WRITE FAILED - {DateTime.Now} \r\n{ex}";
-        }
-
-        //OnPropertyChanged(nameof(ReadValue));
-        //OnPropertyChanged(nameof(ProcessResult));
-        OnPropertyChanged(string.Empty);
-    }
-
-    private async void btnConnect_Click(object sender, RoutedEventArgs e)
-    {
-        var cpuType = (CpuType)Enum.Parse(typeof(CpuType), Cpu);
-        s7 = new SiemensS7Wrapper(cpuType, IpAddress, Rack, Slot);
-        s7.ReadTimeout = 2000;
-        s7.WriteTimeout = 2000;
-        await s7.ConnectAsync();
-
-        ProcessResult = s7.IsConnected ? $"CONNECTION SUCCESSFUL - {DateTime.Now}" : $"CONNECTION FAILED - {DateTime.Now}";
-        OnPropertyChanged(nameof(ProcessResult));
-    }
-
-    public event PropertyChangedEventHandler PropertyChanged;
-
-    protected bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = null)
-    {
-        if (Equals(storage, value))
-        {
-            return false;
+            get => _writeDateTime;
+            set
+            {
+                if (_writeDateTime != value)
+                {
+                    _writeDateTime = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
-        storage = value;
+        public string SelectedDataType
+        {
+            get => _dataType;
+            set
+            {
+                if (_dataType != value)
+                {
+                    _dataType = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsDateTimeSelected));
 
-        OnPropertyChanged(propertyName);
-        return true;
-    }
+                    // Update addresses based on data type selection
+                    if (_dataType == "String")
+                    {
+                        if (!ReadAddress.Contains("String"))
+                            ReadAddress = "DB26.DBB64.String200";
+                        if (!WriteAddress.Contains("String"))
+                            WriteAddress = "DB26.DBB64.String200";
+                    }
+                    else if (_dataType == "DateTime")
+                    {
+                        if (!ReadAddress.Contains("DateTime"))
+                            ReadAddress = "DB7.DBB100.DateTime";
+                        if (!WriteAddress.Contains("DateTime"))
+                            WriteAddress = "DB7.DBB100.DateTime";
+                    }
+                    else if (_dataType == "Default")
+                    {
+                        // Remove String and DateTime from addresses
+                        if (ReadAddress.Contains("String") || ReadAddress.Contains("DateTime"))
+                            ReadAddress = "DB3.DBX5.2";
+                        if (WriteAddress.Contains("String") || WriteAddress.Contains("DateTime"))
+                            WriteAddress = "DB3.DBX5.2";
+                    }
+                    OnPropertyChanged(nameof(ReadAddress));
+                    OnPropertyChanged(nameof(WriteAddress));
+                }
+            }
+        }
 
-    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        private async void btnRead_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                object result;
+                switch (SelectedDataType)
+                {
+                    case "String":
+                        result = await s7.ReadAsync<string>(ReadAddress);
+                        break;
+                    case "DateTime":
+                        result = await s7.ReadAsync<DateTime>(ReadAddress);
+                        break;
+                    default:
+                        result = await s7.ReadAsync<object>(ReadAddress);
+                        break;
+                }
+
+                ReadValue = result?.ToString() ?? "null";
+                ProcessResult = $"READ SUCCESSFUL - {DateTime.Now}";
+            }
+            catch (Exception ex)
+            {
+                ProcessResult = $"READ FAILED - {DateTime.Now}\r\n{FormatExceptionMessage(ex)}";
+            }
+            OnPropertyChanged(string.Empty);
+        }
+
+        private async void btnWrite_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                bool result;
+                switch (SelectedDataType)
+                {
+                    case "String":
+                        result = await s7.WriteAsync(WriteAddress, WriteValue);
+                        break;
+                    case "DateTime":
+                        result = await s7.WriteAsync(WriteAddress, WriteDateTime);
+                        break;
+                    default:
+                        result = await s7.WriteAsyncUnknownType(WriteAddress, WriteValue);
+                        break;
+                }
+
+                ProcessResult = result
+                    ? $"WRITE SUCCESSFUL - {DateTime.Now}"
+                    : $"WRITE FAILED - {DateTime.Now}";
+            }
+            catch (Exception ex)
+            {
+                ProcessResult = $"WRITE FAILED - {DateTime.Now}\r\n{FormatExceptionMessage(ex)}";
+            }
+            OnPropertyChanged(string.Empty);
+        }
+
+        private async void btnConnect_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var cpuType = (CpuType)Enum.Parse(typeof(CpuType), Cpu);
+                s7 = new SiemensS7Wrapper(cpuType, IpAddress, Rack, Slot);
+                s7.ReadTimeout = 2000;
+                s7.WriteTimeout = 2000;
+                await s7.ConnectAsync();
+                ProcessResult = s7.IsConnected
+                    ? $"CONNECTION SUCCESSFUL - {DateTime.Now}"
+                    : $"CONNECTION FAILED - {DateTime.Now}";
+            }
+            catch (Exception ex)
+            {
+                ProcessResult = $"CONNECTION FAILED - {DateTime.Now}\r\n{FormatExceptionMessage(ex)}";
+            }
+            OnPropertyChanged(nameof(ProcessResult));
+        }
+
+        private string FormatExceptionMessage(Exception ex)
+        {
+            // Get the exception message without the stack trace
+            string message = ex.ToString();
+
+            // If there's an inner exception, include its message too
+            if (ex.InnerException != null)
+            {
+                message += $"\r\n→ {ex.InnerException.Message}";
+            }
+
+            //// For PlcException, include the error code
+            //if (ex is PlcException plcEx)
+            //{
+            //    message = $"Error: {plcEx.ErrorCode} - {message}";
+            //}
+
+            // Remove or hide file paths from the message if they exist
+            message = Regex.Replace(message, @"at .*\\.*\.cs:line \d+", "[stack trace hidden]");
+
+            return message;
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = null)
+        {
+            if (Equals(storage, value))
+            {
+                return false;
+            }
+            storage = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }

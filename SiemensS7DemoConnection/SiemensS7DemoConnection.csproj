@@ -10,8 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="MainWindow - Backup.xaml.cs" />
     <Compile Remove="S7Device.cs" />
     <Compile Remove="S7DeviceBase.cs" />
+    <Compile Remove="SiemensS7Wrapper - Backup-V1.cs" />
     <Compile Remove="SiemensS7WrapperExtensions.cs" />
   </ItemGroup>
 
@@ -25,8 +27,10 @@
 
   <ItemGroup>
     <None Include="MainWindow - Backup.xaml" />
+    <None Include="MainWindow - Backup.xaml.cs" />
     <None Include="S7Device.cs" />
     <None Include="S7DeviceBase.cs" />
+    <None Include="SiemensS7Wrapper - Backup-V1.cs" />
     <None Include="SiemensS7WrapperExtensions.cs" />
   </ItemGroup>
 

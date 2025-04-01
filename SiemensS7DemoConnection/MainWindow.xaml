@@ -5,107 +5,140 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SiemensS7DemoConnection"
         mc:Ignorable="d"
-        Title="Siemens S7 Demo" Height="570" Width="700">
+        Title="S7 PLC Connection Demo" Height="700" Width="800">
+
     <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-        <local:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+        <local:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisConverter"/>
     </Window.Resources>
+
     <Grid Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
-            <ColumnDefinition Width="100"/>
-            <ColumnDefinition Width="70"/>
-            <ColumnDefinition Width="120"/>
-            <ColumnDefinition Width="140"/>
-        </Grid.ColumnDefinitions>
 
-        <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" 
-                   Text="IP address"/>
-        <TextBox Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
-                   Text="{Binding IpAddress}"/>
-        <Button Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
-                Content="CONNECT" x:Name="btnConnect" Click="btnConnect_Click" />
+        <!-- Connection Settings -->
+        <GroupBox Header="Connection Settings" Grid.Row="0" Margin="0,0,0,10">
+            <Grid Margin="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" 
-                   Text="CPU Type"/>
-        <TextBox Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
-                   Text="{Binding Cpu}"/>
+                <Label Content="IP Address:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"/>
+                <TextBox Text="{Binding IpAddress}" Grid.Row="0" Grid.Column="1" Margin="5"/>
 
-        <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" 
-                   Text="Rack"/>
-        <TextBox Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
-                   Text="{Binding Rack}"/>
+                <Label Content="CPU Type:" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"/>
+                <TextBox Text="{Binding Cpu}" Grid.Row="0" Grid.Column="3" Margin="5"/>
 
-        <TextBlock Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" 
-                   Text="Slot"/>
-        <TextBox Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
-                   Text="{Binding Slot}"/>
+                <Label Content="Rack:" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center"/>
+                <TextBox Text="{Binding Rack}" Grid.Row="1" Grid.Column="1" Margin="5"/>
 
-        <TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" 
-                   Text="Data Type"/>
-        <ComboBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="5 0"
-                 ItemsSource="{Binding AvailableDataTypes}" 
-                 SelectedItem="{Binding SelectedDataType}" />
-        <TextBlock Grid.Row="4" Grid.Column="3" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="5 0"
-                 Text="Select the data type before reading/writing" Foreground="Gray" />
+                <Label Content="Slot:" Grid.Row="1" Grid.Column="2" VerticalAlignment="Center"/>
+                <TextBox Text="{Binding Slot}" Grid.Row="1" Grid.Column="3" Margin="5"/>
 
-        <TextBlock Grid.Row="5" Grid.Column="0" VerticalAlignment="Center" 
-                   Text="Address to read (e.g. DB1.DBW20)"/>
-        <TextBox Grid.Row="5" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
-                   Text="{Binding ReadAddress}"/>
-        <Button Grid.Row="5" Grid.Column="2" VerticalAlignment="Center"
-                Content="READ" x:Name="btnRead" Click="btnRead_Click" />
-        <TextBlock Grid.Row="5" Grid.Column="3" VerticalAlignment="Center" Margin="5 0"
-                   Text="Value read:"/>
-        <TextBox Grid.Row="5" Grid.Column="4" VerticalAlignment="Center" Margin="5 0"
-                   Text="{Binding ReadValue}" IsReadOnly="True"/>
+                <Button x:Name="btnConnect" Content="Connect" Grid.Row="0" Grid.Column="4" 
+                        Grid.RowSpan="2" Width="100" Height="30" Margin="10,0,0,0"
+                        Click="btnConnect_Click"/>
+            </Grid>
+        </GroupBox>
 
+        <!-- Wrapper Version Selection -->
+        <GroupBox Header="Wrapper Version" Grid.Row="1" Margin="0,0,0,10">
+            <ComboBox ItemsSource="{Binding AvailableWrapperVersions}" 
+                      SelectedItem="{Binding SelectedWrapperVersion}"
+                      Margin="5" Padding="5" Height="30"/>
+        </GroupBox>
 
-        <TextBlock Grid.Row="6" Grid.Column="0" VerticalAlignment="Center"
-                   Text="Address to write (e.g. DB1.DBW20)"/>
-        <TextBox Grid.Row="6" Grid.Column="1" VerticalAlignment="Center" Margin="5 0"
-                   Text="{Binding WriteAddress}"/>
-        <Button Grid.Row="6" Grid.Column="2" VerticalAlignment="Center"
-                Content="WRITE" x:Name="btnWrite" Click="btnWrite_Click" />
-        <TextBlock Grid.Row="6" Grid.Column="3" VerticalAlignment="Center" Margin="5 0"
-                   Text="Value to write:"/>
-        <TextBox Grid.Row="6" Grid.Column="4" VerticalAlignment="Center" Margin="5 0"
-                   Text="{Binding WriteValue}" x:Name="txtWriteValue"
-                   Visibility="{Binding IsDateTimeSelected, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-        <DatePicker Grid.Row="6" Grid.Column="4" VerticalAlignment="Center" Margin="5 0"
-                   SelectedDate="{Binding WriteDateTime}" x:Name="dtpWriteDate"
-                   Visibility="{Binding IsDateTimeSelected, Converter={StaticResource BoolToVisibilityConverter}}"/>
+        <!-- Data Type Selection -->
+        <GroupBox Header="Data Type" Grid.Row="2" Margin="0,0,0,10">
+            <ComboBox ItemsSource="{Binding AvailableDataTypes}" 
+                      SelectedItem="{Binding SelectedDataType}"
+                      Margin="5" Padding="5" Height="30"/>
+        </GroupBox>
 
+        <!-- Read/Write Operations -->
+        <GroupBox Header="Read/Write Operations" Grid.Row="3" Margin="0,0,0,10">
+            <Grid Margin="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="5" VerticalAlignment="Top" Margin="0,5" TextWrapping="Wrap">
-            <Run FontWeight="Bold">Address Examples:</Run>
-            <LineBreak/>
-            <Run>DB3.DBX5.2 - Bit at DB3, byte 5, bit 2</Run>
-            <LineBreak/>
-            <Run>DB15.DBD124 - Double word (32-bit) at DB15, byte 124</Run>
-            <LineBreak/>
-            <Run>DB1.DBW38 - Word (16-bit) at DB1, byte 38</Run>
-            <LineBreak/>
-            <Run>DB26.DBB64.String200 - String with max length 200 at DB26, byte 64</Run>
-            <LineBreak/>
-            <Run>DB7.DBB100.DateTime - DateTime value (8 bytes) at DB7, byte 100</Run>
-        </TextBlock>
+                <!-- Read Operations -->
+                <Label Content="Read Address:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"/>
+                <TextBox Text="{Binding ReadAddress}" Grid.Row="0" Grid.Column="1" Margin="5"/>
+                <Button x:Name="btnRead" Content="Read" Grid.Row="0" Grid.Column="2" 
+                        Width="80" Margin="5" Click="btnRead_Click"/>
 
-        <TextBlock Grid.Row="8" Grid.Column="0" VerticalAlignment="Top"
-                   Text="Process result:"/>
-        <TextBox Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="4" VerticalAlignment="Top" TextWrapping="Wrap"
-                   Text="{Binding ProcessResult}" Background="LightGray" Height="250"/>
+                <Label Content="Read Value:" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center"/>
+                <TextBox Text="{Binding ReadValue}" Grid.Row="1" Grid.Column="1" 
+                         Grid.ColumnSpan="2" Margin="5" IsReadOnly="True"/>
 
+                <!-- Write Operations -->
+                <Label Content="Write Address:" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center"/>
+                <TextBox Text="{Binding WriteAddress}" Grid.Row="2" Grid.Column="1" Margin="5"/>
+                <Button x:Name="btnWrite" Content="Write" Grid.Row="2" Grid.Column="2" 
+                        Width="80" Margin="5" Click="btnWrite_Click"/>
+
+                <!-- Different write value editors based on selected type -->
+                <!-- Default String input -->
+                <Label Content="Write Value:" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center"
+                       Visibility="{Binding IsDateTimeSelected, Converter={StaticResource InverseBoolToVisConverter}}"/>
+                <TextBox Text="{Binding WriteValue}" Grid.Row="3" Grid.Column="1" 
+                         Grid.ColumnSpan="2" Margin="5"
+                         Visibility="{Binding IsDateTimeSelected, Converter={StaticResource InverseBoolToVisConverter}}"/>
+
+                <!-- DateTime Picker -->
+                <Label Content="Write DateTime:" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center"
+                       Visibility="{Binding IsDateTimeSelected, Converter={StaticResource BoolToVisConverter}}"/>
+                <DatePicker SelectedDate="{Binding WriteDateTime}" Grid.Row="3" Grid.Column="1" Margin="5"
+                            Visibility="{Binding IsDateTimeSelected, Converter={StaticResource BoolToVisConverter}}"/>
+                <TextBox Text="{Binding WriteDateTime, StringFormat=HH:mm:ss}"
+                         Grid.Row="3" Grid.Column="2" Margin="5" Width="80"
+                         Visibility="{Binding IsDateTimeSelected, Converter={StaticResource BoolToVisConverter}}"/>
+
+                <!-- Double Value Input -->
+                <Label Content="Write Double:" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center"
+                       Visibility="{Binding IsDoubleSelected, Converter={StaticResource BoolToVisConverter}}"/>
+                <TextBox Text="{Binding WriteDouble}" Grid.Row="4" Grid.Column="1" 
+                         Grid.ColumnSpan="2" Margin="5"
+                         Visibility="{Binding IsDoubleSelected, Converter={StaticResource BoolToVisConverter}}"/>
+
+                <!-- Word Value Input -->
+                <Label Content="Write Word:" Grid.Row="5" Grid.Column="0" VerticalAlignment="Center"
+                       Visibility="{Binding IsWordSelected, Converter={StaticResource BoolToVisConverter}}"/>
+                <TextBox Text="{Binding WriteInt}" Grid.Row="5" Grid.Column="1" 
+                         Grid.ColumnSpan="2" Margin="5"
+                         Visibility="{Binding IsWordSelected, Converter={StaticResource BoolToVisConverter}}"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- Results Area -->
+        <GroupBox Header="Process Results" Grid.Row="4">
+            <TextBox Text="{Binding ProcessResult}" Margin="5" 
+                     IsReadOnly="True" TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"/>
+        </GroupBox>
     </Grid>
 </Window>

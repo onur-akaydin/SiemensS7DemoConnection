@@ -12,9 +12,12 @@ namespace SiemensS7DemoConnection
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        private SiemensS7Wrapper s7;
+        private ISiemensS7Wrapper s7;
         private string _dataType = "Default";
+        private string _wrapperVersion = "Version 1";
         private DateTime _writeDateTime = DateTime.Now;
+        private double _writeDouble = 0.0;
+        private int _writeInt = 0;
 
         public MainWindow()
         {
@@ -26,7 +29,9 @@ namespace SiemensS7DemoConnection
             Slot = 1;
             ReadAddress = "DB3.DBX5.2";
             WriteAddress = "DB3.DBX5.2";
-            AvailableDataTypes = new string[] { "Default", "String", "DateTime" };
+            // Expanding available data types to include the problematic ones
+            AvailableDataTypes = new string[] { "Default", "String", "DateTime", "Double", "Word" };
+            AvailableWrapperVersions = new string[] { "Version 1", "Version 2", "Version 3", "Version 4" };
         }
 
         public string IpAddress { get; set; }
@@ -39,8 +44,11 @@ namespace SiemensS7DemoConnection
         public string WriteAddress { get; set; }
         public string ProcessResult { get; set; }
         public string[] AvailableDataTypes { get; set; }
+        public string[] AvailableWrapperVersions { get; set; }
 
         public bool IsDateTimeSelected => SelectedDataType == "DateTime";
+        public bool IsDoubleSelected => SelectedDataType == "Double";
+        public bool IsWordSelected => SelectedDataType == "Word";
 
         public DateTime WriteDateTime
         {
@@ -55,6 +63,54 @@ namespace SiemensS7DemoConnection
             }
         }
 
+        public double WriteDouble
+        {
+            get => _writeDouble;
+            set
+            {
+                if (_writeDouble != value)
+                {
+                    _writeDouble = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public int WriteInt
+        {
+            get => _writeInt;
+            set
+            {
+                if (_writeInt != value)
+                {
+                    _writeInt = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public string SelectedWrapperVersion
+        {
+            get => _wrapperVersion;
+            set
+            {
+                if (_wrapperVersion != value)
+                {
+                    _wrapperVersion = value;
+                    OnPropertyChanged();
+
+                    // Reset connection when wrapper version changes
+                    if (s7 != null && s7.IsConnected)
+                    {
+                        s7.DisconnectAsync().ConfigureAwait(false);
+                        s7 = null;
+                        ProcessResult = $"Disconnected due to wrapper version change - {DateTime.Now}";
+                        OnPropertyChanged(nameof(ProcessResult));
+                    }
+                }
+            }
+        }
+
         public string SelectedDataType
         {
             get => _dataType;
@@ -65,6 +121,8 @@ namespace SiemensS7DemoConnection
                     _dataType = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(IsDateTimeSelected));
+                    OnPropertyChanged(nameof(IsDoubleSelected));
+                    OnPropertyChanged(nameof(IsWordSelected));
 
                     // Update addresses based on data type selection
                     if (_dataType == "String")
@@ -81,13 +139,25 @@ namespace SiemensS7DemoConnection
                         if (!WriteAddress.Contains("DateTime"))
                             WriteAddress = "DB7.DBB100.DateTime";
                     }
+                    else if (_dataType == "Double")
+                    {
+                        if (!ReadAddress.Contains("DBD"))
+                            ReadAddress = "DB1.DBD4";
+                        if (!WriteAddress.Contains("DBD"))
+                            WriteAddress = "DB1.DBD4";
+                    }
+                    else if (_dataType == "Word")
+                    {
+                        if (!ReadAddress.Contains("DBW"))
+                            ReadAddress = "DB1.DBW20";
+                        if (!WriteAddress.Contains("DBW"))
+                            WriteAddress = "DB1.DBW20";
+                    }
                     else if (_dataType == "Default")
                     {
-                        // Remove String and DateTime from addresses
-                        if (ReadAddress.Contains("String") || ReadAddress.Contains("DateTime"))
-                            ReadAddress = "DB3.DBX5.2";
-                        if (WriteAddress.Contains("String") || WriteAddress.Contains("DateTime"))
-                            WriteAddress = "DB3.DBX5.2";
+                        // Remove specific data type addresses
+                        ReadAddress = "DB3.DBX5.2";
+                        WriteAddress = "DB3.DBX5.2";
                     }
                     OnPropertyChanged(nameof(ReadAddress));
                     OnPropertyChanged(nameof(WriteAddress));
@@ -95,11 +165,65 @@ namespace SiemensS7DemoConnection
             }
         }
 
-        private async void btnRead_Click(object sender, RoutedEventArgs e)
+        private async void btnConnect_Click(object sender, RoutedEventArgs e)
         {
             try
             {
+                var cpuType = (CpuType)Enum.Parse(typeof(CpuType), Cpu);
+
+                // Create the appropriate wrapper based on selection
+                if (SelectedWrapperVersion == "Version 1")
+                {
+                    s7 = new SiemensS7WrapperV1(cpuType, IpAddress, Rack, Slot);
+                    ProcessResult = $"Using SiemensS7WrapperV1 (Original Implementation)";
+                }
+                else if (SelectedWrapperVersion == "Version 2")
+                {
+                    s7 = new SiemensS7WrapperV2(cpuType, IpAddress, Rack, Slot);
+                    ProcessResult = $"Using SiemensS7WrapperV2 (Improved Implementation)";
+                }
+                else if (SelectedWrapperVersion == "Version 3")
+                {
+                    s7 = new SiemensS7WrapperV3(cpuType, IpAddress, Rack, Slot);
+                    ProcessResult = $"Using SiemensS7WrapperV3 (Direct Bytes Implementation)";
+                }
+                else // Version 4
+                {
+                    s7 = new SiemensS7WrapperV4(cpuType, IpAddress, Rack, Slot);
+                    ProcessResult = $"Using SiemensS7WrapperV4 (Custom Structures Implementation)";
+                }
+
+                s7.ReadTimeout = 2000;
+                s7.WriteTimeout = 2000;
+                await s7.ConnectAsync();
+
+                ProcessResult += s7.IsConnected
+                    ? $"\r\nCONNECTION SUCCESSFUL - {DateTime.Now}"
+                    : $"\r\nCONNECTION FAILED - {DateTime.Now}";
+            }
+            catch (Exception ex)
+            {
+                ProcessResult = $"CONNECTION FAILED - {DateTime.Now}\r\n{FormatExceptionMessage(ex)}";
+            }
+            OnPropertyChanged(nameof(ProcessResult));
+        }
+
+        private async void btnRead_Click(object sender, RoutedEventArgs e)
+        {
+            if (s7 == null || !s7.IsConnected)
+            {
+                ProcessResult = $"NOT CONNECTED - Please connect to PLC first - {DateTime.Now}";
+                OnPropertyChanged(nameof(ProcessResult));
+                return;
+            }
+
+            try
+            {
                 object result;
+
+                // Add wrapper version info to result
+                string wrapperInfo = $"Using {GetWrapperName()}";
+
                 switch (SelectedDataType)
                 {
                     case "String":
@@ -108,13 +232,19 @@ namespace SiemensS7DemoConnection
                     case "DateTime":
                         result = await s7.ReadAsync<DateTime>(ReadAddress);
                         break;
+                    case "Double":
+                        result = await s7.ReadAsync<double>(ReadAddress);
+                        break;
+                    case "Word":
+                        result = await s7.ReadAsync<ushort>(ReadAddress);
+                        break;
                     default:
                         result = await s7.ReadAsync<object>(ReadAddress);
                         break;
                 }
 
                 ReadValue = result?.ToString() ?? "null";
-                ProcessResult = $"READ SUCCESSFUL - {DateTime.Now}";
+                ProcessResult = $"{wrapperInfo}\r\nREAD SUCCESSFUL - {DateTime.Now}";
             }
             catch (Exception ex)
             {
@@ -125,9 +255,20 @@ namespace SiemensS7DemoConnection
 
         private async void btnWrite_Click(object sender, RoutedEventArgs e)
         {
+            if (s7 == null || !s7.IsConnected)
+            {
+                ProcessResult = $"NOT CONNECTED - Please connect to PLC first - {DateTime.Now}";
+                OnPropertyChanged(nameof(ProcessResult));
+                return;
+            }
+
             try
             {
                 bool result;
+
+                // Add wrapper version info to result
+                string wrapperInfo = $"Using {GetWrapperName()}";
+
                 switch (SelectedDataType)
                 {
                     case "String":
@@ -136,14 +277,20 @@ namespace SiemensS7DemoConnection
                     case "DateTime":
                         result = await s7.WriteAsync(WriteAddress, WriteDateTime);
                         break;
+                    case "Double":
+                        result = await s7.WriteAsync(WriteAddress, WriteDouble);
+                        break;
+                    case "Word":
+                        result = await s7.WriteAsync(WriteAddress, WriteInt);
+                        break;
                     default:
                         result = await s7.WriteAsyncUnknownType(WriteAddress, WriteValue);
                         break;
                 }
 
                 ProcessResult = result
-                    ? $"WRITE SUCCESSFUL - {DateTime.Now}"
-                    : $"WRITE FAILED - {DateTime.Now}";
+                    ? $"{wrapperInfo}\r\nWRITE SUCCESSFUL - {DateTime.Now}"
+                    : $"{wrapperInfo}\r\nWRITE FAILED - {DateTime.Now}";
             }
             catch (Exception ex)
             {
@@ -152,24 +299,16 @@ namespace SiemensS7DemoConnection
             OnPropertyChanged(string.Empty);
         }
 
-        private async void btnConnect_Click(object sender, RoutedEventArgs e)
+        private string GetWrapperName()
         {
-            try
+            switch (SelectedWrapperVersion)
             {
-                var cpuType = (CpuType)Enum.Parse(typeof(CpuType), Cpu);
-                s7 = new SiemensS7Wrapper(cpuType, IpAddress, Rack, Slot);
-                s7.ReadTimeout = 2000;
-                s7.WriteTimeout = 2000;
-                await s7.ConnectAsync();
-                ProcessResult = s7.IsConnected
-                    ? $"CONNECTION SUCCESSFUL - {DateTime.Now}"
-                    : $"CONNECTION FAILED - {DateTime.Now}";
+                case "Version 1": return "SiemensS7WrapperV1";
+                case "Version 2": return "SiemensS7WrapperV2";
+                case "Version 3": return "SiemensS7WrapperV3";
+                case "Version 4": return "SiemensS7WrapperV4";
+                default: return SelectedWrapperVersion;
             }
-            catch (Exception ex)
-            {
-                ProcessResult = $"CONNECTION FAILED - {DateTime.Now}\r\n{FormatExceptionMessage(ex)}";
-            }
-            OnPropertyChanged(nameof(ProcessResult));
         }
 
         private string FormatExceptionMessage(Exception ex)
@@ -183,14 +322,16 @@ namespace SiemensS7DemoConnection
                 message += $"\r\n→ {ex.InnerException.Message}";
             }
 
-            //// For PlcException, include the error code
-            //if (ex is PlcException plcEx)
-            //{
-            //    message = $"Error: {plcEx.ErrorCode} - {message}";
-            //}
+            // For PlcException, include the error code
+            if (ex is PlcException plcEx)
+            {
+                message = $"Error: {plcEx.ErrorCode} - {message}";
+            }
 
             // Remove or hide file paths from the message if they exist
             message = Regex.Replace(message, @"at .*\\.*\.cs:line \d+", "[stack trace hidden]");
+
+            message += $"\r\n\r\nWrapper Version: {SelectedWrapperVersion}";
 
             return message;
         }
